@@ -8,8 +8,6 @@ import org.example.duckdb.common.ResultSetUtils;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -100,11 +98,10 @@ public class MergePerformanceTests {
         log.debug("Used memory at the end: {} MB", usedMemoryInMb());
     }
 
-    private File createTempDirForRewrites(String table) {
-        File dedupedDataDir = createTempDir(table);
-        log.info("dedupedDataDir path: {}", dedupedDataDir.getPath());
-        dedupedDataDir.deleteOnExit();
-        return dedupedDataDir;
+    private File createTempDirForRewrites(String name) {
+        File dir = createTempDir(name);
+        dir.deleteOnExit();
+        return dir;
     }
 
     @SneakyThrows
@@ -157,13 +154,17 @@ public class MergePerformanceTests {
         return Instant.now().toString().replace(":", "-") + "_" + count.get() + ".parquet";
     }
 
-    private static Connection createDuckDbConnection() throws SQLException {
+    @SneakyThrows
+    private static Connection createDuckDbConnection() {
         Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-        @Cleanup
-        Statement stmt = conn.createStatement();
-        stmt.execute("PRAGMA memory_limit='1GB'");
-        stmt.execute("PRAGMA threads=10");
-        stmt.execute(String.format("PRAGMA temp_directory='%s'", "/data/kamal_test"));
+
+        String tempDir = Files.createTempDirectory("duckdb-temp-files").toFile().getAbsolutePath();
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA memory_limit='3GB'");
+            stmt.execute("PRAGMA threads=10");
+            stmt.execute(String.format("PRAGMA temp_directory='%s'", tempDir));
+        }
 
         return conn;
     }
