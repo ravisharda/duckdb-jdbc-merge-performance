@@ -146,13 +146,10 @@ public class MergePerformanceTests {
         ResultSetUtils.printData(resultSet, 2);
     }
 
+    @SneakyThrows
     private static File createTempDir(String table) {
         String prefix = table.replace(".", "_") + "_" + UUID.randomUUID().toString().replace("-", "_") + "_";
-        try {
-            return Files.createTempDirectory(prefix).toFile();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return Files.createTempDirectory(prefix).toFile();
     }
 
     public static String generateUniqueParquetFileName() {
@@ -162,11 +159,12 @@ public class MergePerformanceTests {
 
     private static Connection createDuckDbConnection() throws SQLException {
         Connection conn = DriverManager.getConnection("jdbc:duckdb:");
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("PRAGMA memory_limit='1GB'");
-            stmt.execute("PRAGMA threads=10");
-            stmt.execute(String.format("PRAGMA temp_directory='%s'", "/data/kamal_test"));
-        }
+        @Cleanup
+        Statement stmt = conn.createStatement();
+        stmt.execute("PRAGMA memory_limit='1GB'");
+        stmt.execute("PRAGMA threads=10");
+        stmt.execute(String.format("PRAGMA temp_directory='%s'", "/data/kamal_test"));
+
         return conn;
     }
 
