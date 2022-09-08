@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    implementation "org.slf4j:slf4j-api:1.7.25"
+    implementation "ch.qos.logback:logback-classic:1.1.7"
+
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+
+    implementation group: 'org.duckdb', name: 'duckdb_jdbc', version: '0.5.0'
+}
+
+test {
+    useJUnitPlatform()
+}
