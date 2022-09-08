@@ -25,7 +25,7 @@ import static org.example.duckdb.common.MemoryUtils.triggerGc;
 import static org.example.duckdb.common.MemoryUtils.usedMemoryInMb;
 
 @Slf4j
-public class MergePerformance {
+public class MergePerformanceTests {
     private static final String TABLE_NAME = "test_memory_limit";
     private static final String PATH_TO_RESOURCES = "src/test/resources";
     private static final ThreadLocal<Integer> count = ThreadLocal.withInitial(() -> 0);
@@ -33,7 +33,8 @@ public class MergePerformance {
     @Test
     public void driveMerge() {
         triggerGc();
-        log.debug("Used memory - start: {} MB", usedMemoryInMb());
+        log.debug("Used memory at the beginning: {} MB", usedMemoryInMb());
+
         String incomingDataPath = PATH_TO_RESOURCES + "/incoming_data";
         String existingDataPath = PATH_TO_RESOURCES + "/existing_files";
         executeQueriesUsingTable(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME, 2);
@@ -42,9 +43,8 @@ public class MergePerformance {
     @SneakyThrows
     public void executeQueriesUsingTable(@NonNull File existingDir, @NonNull File incomingDataDir, @NonNull String table,
                                          int countOfExistingFilesToRewrite) {
-        File dedupedDataDir = createTempDir(table);
-        log.info("dedupedDataDir path: {}", dedupedDataDir.getPath());
-        dedupedDataDir.deleteOnExit();
+
+        File rewrittenFilesDir = createTempDirForRewrites(table);
 
         try (Connection conn = createDuckDbConnection()) {
             try (Statement stmt = conn.createStatement()) {
@@ -54,9 +54,9 @@ public class MergePerformance {
                                 .replace("{delete_keys}", createDeleteClause(List.of("id")))
                                 .replace("{incoming_files}", incomingDataDir.getPath() + "/*.parquet");
 
-                log.info("Executing statement: {}", incomingPksTableCreationStmt);
+                log.debug("Executing statement: {}", incomingPksTableCreationStmt);
                 stmt.execute(incomingPksTableCreationStmt);
-                log.debug("Used memory after creating table for incoming files: {} MB", usedMemoryInMb());
+                log.info("Used memory after creating table for incoming files: {} MB", usedMemoryInMb());
 
                 int count = 0;
                 for (File existingFile : existingDir.listFiles()) {
@@ -68,7 +68,8 @@ public class MergePerformance {
                     log.info("Executing query: {}", existingFileTableCreationStmt);
                     stmt.execute(existingFileTableCreationStmt);
 
-                    String rewriteFilePath = dedupedDataDir.getPath() + "/" + generateUniqueParquetFileName();
+                    String rewriteFilePath = rewrittenFilesDir.getPath() + "/" + generateUniqueParquetFileName();
+
                     String mergeStmt =
                             "COPY (SELECT {column_clause} FROM test_existing_table WHERE {delete_keys} NOT IN "
                                     + "(SELECT {delete_keys} FROM test_incoming_table))"
@@ -84,7 +85,7 @@ public class MergePerformance {
                     long recordCount = extractRecordCount(rewriteFilePath, stmt);
                     log.info("Affected {} records", recordCount);
 
-                    // Dropping temporary table
+                    // Cleaning up temporary table
                     String dropTableQuery = "DROP TABLE test_existing_table";
                     log.info("Executing query:" + dropTableQuery);
                     stmt.execute(dropTableQuery);
@@ -96,7 +97,14 @@ public class MergePerformance {
             }
         }
         triggerGc();
-        log.debug("Used memory - end: {} MB", usedMemoryInMb());
+        log.debug("Used memory at the end: {} MB", usedMemoryInMb());
+    }
+
+    private File createTempDirForRewrites(String table) {
+        File dedupedDataDir = createTempDir(table);
+        log.info("dedupedDataDir path: {}", dedupedDataDir.getPath());
+        dedupedDataDir.deleteOnExit();
+        return dedupedDataDir;
     }
 
     @SneakyThrows
