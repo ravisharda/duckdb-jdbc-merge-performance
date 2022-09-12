@@ -26,7 +26,7 @@ import static org.example.duckdb.common.MemoryUtils.usedMemoryInMb;
 public class MergePerformanceTests {
     private static final String TABLE_NAME = "test_memory_limit";
     private static final String PATH_TO_RESOURCES = "src/test/resources";
-    private static final ThreadLocal<Integer> count = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Integer> fileSuffix = ThreadLocal.withInitial(() -> 0);
 
     @Test
     public void driveMerge() {
@@ -35,7 +35,7 @@ public class MergePerformanceTests {
 
         String incomingDataPath = PATH_TO_RESOURCES + "/incoming_data";
         String existingDataPath = PATH_TO_RESOURCES + "/existing_files";
-        executeQueriesUsingTable(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME, 2);
+        executeQueriesUsingTable(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME, -1);
     }
 
     @SneakyThrows
@@ -58,6 +58,8 @@ public class MergePerformanceTests {
 
                 int count = 0;
                 for (File existingFile : existingDir.listFiles()) {
+                    log.info("Processing existing file {}", existingFile.getPath());
+
                     // Creating a table for the existing file
                     String existingFileTableCreationStmt =
                             "CREATE TABLE test_existing_table AS SELECT * FROM read_parquet('{existing_file}')"
@@ -150,8 +152,8 @@ public class MergePerformanceTests {
     }
 
     public static String generateUniqueParquetFileName() {
-        count.set(count.get() + 1);
-        return Instant.now().toString().replace(":", "-") + "_" + count.get() + ".parquet";
+        fileSuffix.set(fileSuffix.get() + 1);
+        return Instant.now().toString().replace(":", "-") + "_" + fileSuffix.get() + ".parquet";
     }
 
     @SneakyThrows
@@ -159,6 +161,7 @@ public class MergePerformanceTests {
         Connection conn = DriverManager.getConnection("jdbc:duckdb:");
 
         String tempDir = Files.createTempDirectory("duckdb-temp-files").toFile().getAbsolutePath();
+        log.info("tempDir: {}", tempDir);
 
         try (Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA memory_limit='3GB'");
