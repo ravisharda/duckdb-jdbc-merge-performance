@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'org.example'
@@ -21,7 +22,31 @@ dependencies {
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 
-    implementation group: 'org.duckdb', name: 'duckdb_jdbc', version: '0.5.0'
+    implementation group: 'org.duckdb', name: 'duckdb_jdbc', version: '0.4.0'
+
+    /*implementation platform('com.amazonaws:aws-java-sdk-bom:1.12.84')
+    implementation 'com.amazonaws:aws-java-sdk-s3'
+    implementation 'com.amazonaws:aws-java-sdk-core'
+    implementation 'com.amazonaws:aws-java-sdk-sts'*/
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+}
+
+/*jar {
+    manifest {
+        attributes "Main-Class": "org.example.duckdb.Main"
+    }
+}*/
+
+mainClassName = 'org.example.duckdb.Main'
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': "${mainClassName}"
+    }
+    archiveBaseName = "${rootProject.name}-all"
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 test {
