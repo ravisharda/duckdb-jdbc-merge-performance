@@ -16,27 +16,14 @@ public class MergePerformanceTests {
     private static final String PATH_TO_TESTDATA = "test_data";
 
     @Test
-    public void driveMergeUsingTable() {
-        triggerGc();
-        log.debug("Used memory at the beginning: {} MB", usedMemoryInMb());
-
-        String incomingDataPath = PATH_TO_TESTDATA + "/incoming_data";
-        String existingDataPath = PATH_TO_TESTDATA + "/existing_files";
-
-        RecordsProcessor processor = new RecordsProcessor(Arrays.asList("PRAGMA memory_limit='2GB'", "PRAGMA threads=10"));
-        processor.mergeUsingIntermediateTables(new File(existingDataPath),
-                new File(incomingDataPath), TABLE_NAME, 2);
-    }
-
-    @Test
     public void driveMergeWithoutTables() {
         triggerGc();
         log.debug("Used memory at the beginning: {} MB", usedMemoryInMb());
 
-        String incomingDataPath = PATH_TO_TESTDATA + "/incoming_data_limited";
-        String existingDataPath = PATH_TO_TESTDATA + "/existing_files_limited";
+        String incomingDataPath = PATH_TO_TESTDATA + "/incoming_files";
+        String existingDataPath = PATH_TO_TESTDATA + "/existing_files";
 
-        RecordsProcessor processor = new RecordsProcessor(Arrays.asList("PRAGMA memory_limit='2GB'", "PRAGMA threads=10"));
-        processor.mergeWithoutTables(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME);
+        RecordsProcessor processor = new RecordsProcessor(Arrays.asList("PRAGMA memory_limit='3GB'", "PRAGMA threads=10"));
+        processor.mergeWithoutTables(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME, 40);
     }
 }

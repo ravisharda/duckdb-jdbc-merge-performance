@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -21,7 +20,7 @@ import static org.example.duckdb.common.MemoryUtils.triggerGc;
 import static org.example.duckdb.common.MemoryUtils.usedMemoryInMb;
 
 /**
- * Simulates merges of incoming records from Core into existing files in S3.
+ * Simulates merges of incoming records into existing files in S3.
  *
  * Note: Some of the code present here is a faithful reproduction of unoptimized code used elsewhere.
  */
@@ -101,14 +100,13 @@ public class RecordsProcessor {
 
     // Tries to mimic existing code elsewhere
     @SneakyThrows
-    public void mergeWithoutTables(File existingDir, File incomingDataDir, @NonNull String table) {
+    public void mergeWithoutTables(File existingDir, File incomingDataDir, @NonNull String table, int iterCountExistingFiles) {
         File rewrittenFilesDir = createTempDir(table);
         rewrittenFilesDir.deleteOnExit();
 
         try (Connection conn = createDuckDbConnection()) {
-            int iteration = 0;
-            int maxIterationCount = 15;
-            while (iteration++ <= maxIterationCount) {
+            int existingFilesCurrentIterCount = 0;
+            while (existingFilesCurrentIterCount++ <= iterCountExistingFiles) {
                 try (Statement stmt = conn.createStatement()) {
                     for (File existingFile : existingDir.listFiles()) {
                         log.debug("Processing existing file -- {}", existingFile.getPath());

@@ -32,8 +32,8 @@ docker rm duckdb-test-container
 ## Note
 
 1. The project assumes that the test data files (with `.parquet` extension) are available in the `test_data` directory. 
-   * `incoming_data_limited` - Incoming data files for the merge. 
-   * `existing_files_limited` - Existing files on which the incoming data'll be merged.
+   * `incoming_files` - Incoming data files for the merge. 
+   * `existing_ffiles` - Existing files on which the incoming data'll be merged.
 
 2. The merge related driver code in `src/test/java` uses the same folders as above minus the `_limited` suffix. You can
    run those as experiments by executing the test directly from the IDE. 

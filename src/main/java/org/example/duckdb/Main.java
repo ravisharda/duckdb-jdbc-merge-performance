@@ -22,22 +22,12 @@ public class Main {
         main.driveMergeWithoutTables();
     }
 
-    public void driveMergeUsingTable() {
-        triggerGc();
-        log.debug("Used memory at the beginning: {} MB", usedMemoryInMb());
-
-        String incomingDataPath = PATH_TO_TEST_DATA + "/incoming_data";
-        String existingDataPath = PATH_TO_TEST_DATA + "/existing_files";
-        processor.mergeUsingIntermediateTables(new File(existingDataPath), new File(incomingDataPath),
-                TABLE_NAME, -1);
-    }
-
     public void driveMergeWithoutTables() {
         triggerGc();
         log.debug("Used memory at the beginning: {} MB", usedMemoryInMb());
 
-        String incomingDataPath = PATH_TO_TEST_DATA + "/incoming_data";
+        String incomingDataPath = PATH_TO_TEST_DATA + "/incoming_files";
         String existingDataPath = PATH_TO_TEST_DATA + "/existing_files";
-        processor.mergeWithoutTables(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME);
+        processor.mergeWithoutTables(new File(existingDataPath), new File(incomingDataPath), TABLE_NAME, 40);
     }
 }
